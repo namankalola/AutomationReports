@@ -3,11 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reports</title>
+  <title>Client Reports</title>
   <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    section {
+      margin-bottom: 40px;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
+      margin-top: 10px;
     }
     th, td {
       border: 1px solid #ccc;
@@ -17,61 +28,88 @@
     th {
       background-color: #f4f4f4;
     }
+    h2 {
+      color: #333;
+    }
   </style>
 </head>
 <body>
-  <h1>Available Reports</h1>
-  <table>
-    <thead>
-      <tr>
-        <th>File Name</th>
-        <th>Last Modified Date</th>
-        <th>Link</th>
-      </tr>
-    </thead>
-    <tbody id="reports-table">
-      <!-- Rows will be added dynamically -->
-    </tbody>
-  </table>
+  <h1>Client Project Reports</h1>
+  <div id="clients-section">
+    <!-- Tables for each client will be dynamically added here -->
+  </div>
 
   <script>
-    async function loadReports() {
-      const response = await fetch('/api/get-reports');
-      const files = await response.json();
+    async function loadClientsAndReports() {
+      // Fetch client folder names
+      const clientsResponse = await fetch('/api/get-clients');
+      const clients = await clientsResponse.json();
 
-      const tableBody = document.getElementById('reports-table');
-      files.forEach(file => {
-        const row = document.createElement('tr');
+      const clientsSection = document.getElementById('clients-section');
+      clientsSection.innerHTML = ''; // Clear previous content
 
-        // File name column
-        const fileNameCell = document.createElement('td');
-        fileNameCell.textContent = file.name;
+      // For each client, fetch their reports and create a table
+      for (const client of clients) {
+        const clientReportsResponse = await fetch(`/api/get-reports?client=${encodeURIComponent(client)}`);
+        const reports = await clientReportsResponse.json();
 
-        // Last modified date column
-        const dateCell = document.createElement('td');
-        const modifiedDate = new Date(file.modifiedDate);
-        dateCell.textContent = modifiedDate.toLocaleString(); // Format the date as needed
+        // Create a section for the client
+        const clientSection = document.createElement('section');
+        const clientHeader = document.createElement('h2');
+        clientHeader.textContent = `Reports for ${client}`;
+        clientSection.appendChild(clientHeader);
 
-        // Link column
-        const linkCell = document.createElement('td');
-        const link = document.createElement('a');
-        link.href = `/reports/${file.name}`;
-        link.textContent = 'View';
-        link.target = '_blank';
+        // Create the table
+        const table = document.createElement('table');
+        const tableHeader = `
+          <thead>
+            <tr>
+              <th>File Name</th>
+              <th>Last Modified Date</th>
+              <th>Link</th>
+            </tr>
+          </thead>
+        `;
+        table.innerHTML = tableHeader;
+        const tableBody = document.createElement('tbody');
 
-        linkCell.appendChild(link);
+        // Populate the table rows
+        reports.forEach(report => {
+          const row = document.createElement('tr');
 
-        // Append cells to the row
-        row.appendChild(fileNameCell);
-        row.appendChild(dateCell);
-        row.appendChild(linkCell);
+          const fileNameCell = document.createElement('td');
+          fileNameCell.textContent = report.name;
 
-        // Append the row to the table
-        tableBody.appendChild(row);
-      });
+          const dateCell = document.createElement('td');
+          const modifiedDate = new Date(report.modifiedDate);
+          dateCell.textContent = modifiedDate.toLocaleString();
+
+          const linkCell = document.createElement('td');
+          const link = document.createElement('a');
+          link.href = `/clients/${client}/${report.name}`;
+          link.textContent = 'View';
+          link.target = '_blank';
+          linkCell.appendChild(link);
+
+          row.appendChild(fileNameCell);
+          row.appendChild(dateCell);
+          row.appendChild(linkCell);
+          tableBody.appendChild(row);
+        });
+
+        // Append table body to the table
+        table.appendChild(tableBody);
+
+        // Append the table to the client section
+        clientSection.appendChild(table);
+
+        // Append the client section to the main section
+        clientsSection.appendChild(clientSection);
+      }
     }
 
-    loadReports();
+    // Load clients and reports on page load
+    loadClientsAndReports();
   </script>
 </body>
 </html>
