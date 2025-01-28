@@ -16,7 +16,7 @@ export default function handler(req, res) {
       const stats = fs.statSync(filePath);
       return {
         name: file,
-        creationDate: stats.birthtime, // Last modified date
+         modifiedDate: stats.mtime, // Last modified date
       };
     });
 
